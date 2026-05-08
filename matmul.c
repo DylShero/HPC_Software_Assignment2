@@ -33,6 +33,7 @@ void free_matrix(Matrix m)
 
 //   ============================================================
 #include <stdio.h>
+#include <omp.h>
 
 int main()
 {
@@ -42,14 +43,16 @@ int main()
   Matrix c=alloc_matrix(n);
 
 // Fill matrices b and c with random numbers 
-  srand48(123456789UL);
+  srand(123456789UL);
   for (int i=0;i<n;i++)
     for (int j=0;j<n;j++)
     {
-      b.entry[i][j] = drand48() - 0.5; 
-      c.entry[i][j] = drand48() - 0.5; 
+      b.entry[i][j] = ((double)rand() / RAND_MAX) - 0.5; 
+      c.entry[i][j] = ((double)rand() / RAND_MAX) - 0.5;
     }
-  
+
+  printf("Running with %d threads...\n", omp_get_max_threads());
+  #pragma omp parallel for collapse(2) default(none) shared(a, b, c, n) schedule(static)
   for (int i=0;i<n;i++)
     for (int j=0;j<n;j++)
     {
