@@ -52,16 +52,36 @@ int main()
     }
 
   printf("Running with %d threads...\n", omp_get_max_threads());
-  #pragma omp parallel for collapse(2) default(none) shared(a, b, c, n) schedule(static)
-  for (int i=0;i<n;i++)
-    for (int j=0;j<n;j++)
-    {
-      a.entry[i][j] = 0;
-      for (int k=0;k<n;k++)
-        a.entry[i][j] += b.entry[i][k] * c.entry[k][j]; 
-    }
 
-  printf("a(10,10) = %lf\n",a.entry[10][10]);
+  double start_time = omp_get_wtime();
+  #pragma omp parallel default(none) shared(a, b, c, n)
+  {
+    #pragma omp for collapse(2) schedule(static)
+    for (int i=0;i<n;i++) {
+      for (int j=0;j<n;j++) {
+        
+        double sum = 0.0; 
+        for (int k=0;k<n;k++) {
+          sum += b.entry[i][k] * c.entry[k][j]; 
+        }
+        a.entry[i][j] = sum; 
+        
+      }
+    }
+  }
+  double end_time = omp_get_wtime();
+
+  //Local sum because compiler was optimising away most of the calculation
+  double check_sum = 0.0;
+  for(int i=0; i<n; i++) {
+      check_sum += a.entry[i][i];
+  }
+
+  printf("a(10,10) = %lf\n", a.entry[10][10]);
+  printf("Verification sum: %lf\n", check_sum);
+  
+  //Print time taken
+  printf("Time taken: %f seconds\n", end_time - start_time);
 
   free_matrix(a);
   free_matrix(b);
